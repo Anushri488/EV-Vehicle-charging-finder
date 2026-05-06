@@ -1,0 +1,10 @@
+State,District,Station Name,Address,Contact,Services,Final Timing,Map URL,Latitude,Longitude
+Bihar,Patna,Tata Power EZ Charge - Patna,Boring Road Patna,N/A,CCS2 | Type 2,24 Hours,"https://maps.google.com/?q=25.6100,85.1410",25.6100,85.1410
+Bihar,Patna,IOCL EV Charging Station - Patna,Near Patna Junction,N/A,AC001 | Type 2,06:00 AM - 11:00 PM,"https://maps.google.com/?q=25.5941,85.1376",25.5941,85.1376
+Bihar,Gaya,HPCL EV Charging Station - Gaya,Gaya Main Road,N/A,CCS2,24 Hours,"https://maps.google.com/?q=24.7914,85.0002",24.7914,85.0002
+Delhi,New Delhi,Tata Power EZ Charge - Connaught Place,Connaught Place New Delhi,N/A,CCS2 | CHAdeMO,24 Hours,"https://maps.google.com/?q=28.6315,77.2167",28.6315,77.2167
+Delhi,New Delhi,Statiq EV Charging Station - India Gate,Near India Gate New Delhi,N/A,Type 2 | CCS2,24 Hours,"https://maps.google.com/?q=28.6129,77.2295",28.6129,77.2295
+Maharashtra,Mumbai,Jio BP Pulse EV Station - Bandra,Bandra Mumbai,N/A,CCS2,24 Hours,"https://maps.google.com/?q=19.0596,72.8295",19.0596,72.8295
+Maharashtra,Pune,ChargeZone EV Station - Hinjewadi,Hinjewadi Pune,N/A,CCS2 | Type 2,24 Hours,"https://maps.google.com/?q=18.5913,73.7389",18.5913,73.7389
+Uttar Pradesh,Lucknow,Tata Power EZ Charge - Lucknow,Gomti Nagar Lucknow,N/A,CCS2 | Type 2,24 Hours,"https://maps.google.com/?q=26.8467,80.9462",26.8467,80.9462
+Uttar Pradesh,Kanpur,IOCL EV Charging Station - Kanpur,GT Road Kanpur,N/A,AC001 | CCS2,07:00 AM - 10:00 PM,"https://maps.google.com/?q=26.4499,80.3319",26.4499,80.3319

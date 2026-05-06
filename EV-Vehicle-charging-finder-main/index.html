@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Charging Station Finder</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #08111f;
+    color: #fff;
+  }
+
+  .hero {
+    padding: 32px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #061826, #0f766e);
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: 36px;
+  }
+
+  .hero p {
+    opacity: 0.9;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 1350px;
+    margin: 24px auto;
+    padding: 0 24px;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    background: #0f172a;
+    padding: 18px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px #0005;
+  }
+
+  select,
+  button,
+  input {
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    background: #111827;
+    color: #fff;
+  }
+
+  button {
+    background: #14b8a6;
+    color: #031312;
+    font-weight: 700;
+    cursor: pointer;
+    border: 0;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.6fr);
+    gap: 22px;
+    margin-top: 18px;
+    align-items: start;
+  }
+
+  .cards {
+    height: 620px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+
+  .station-card {
+    background: #0f172a;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #1f2937;
+  }
+
+  .station-card h3 {
+    margin: 0 0 8px;
+    color: #5eead4;
+  }
+
+  .station-card p {
+    margin: 6px 0;
+    color: #cbd5e1;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .actions a,
+  .actions button {
+    font-size: 14px;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #14b8a6;
+    color: #03201d;
+    font-weight: 700;
+  }
+
+  .muted {
+    color: #94a3b8;
+  }
+
+  #map {
+    height: 620px;
+    width: 100%;
+    min-width: 0;
+    border-radius: 18px;
+    border: 1px solid #1f2937;
+    overflow: hidden;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    gap: 12px;
+  }
+
+  .link {
+    color: #5eead4;
+    text-decoration: none;
+  }
+
+  @media (max-width: 950px) {
+    .filters,
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    #map,
+    .cards {
+      height: 420px;
+    }
+
+    .panel {
+      padding: 0 14px;
+    }
+  }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <h1>EV Charging Station Finder</h1>
+    <p>Find EV charging stations by state and district. Data can be updated using the included scraping script.</p>
+  </section>
+  <main class="panel">
+    <div class="filters">
+      <select id="stateFilter"><option value="">Select State</option></select>
+      <select id="districtFilter" disabled><option value="">Select District</option></select>
+      <button id="searchBtn">Search Stations</button>
+    </div>
+    <div class="topbar">
+      <div><strong id="resultTitle">Charging Stations</strong> <span class="muted" id="resultCount"></span></div>
+      <a class="link" href="population.html">Population vs EV Chart</a>
+    </div>
+    <div class="layout">
+      <div class="cards" id="stationList"></div>
+      <div id="map"></div>
+    </div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API = window.location.origin;
+    let map = L.map('map').setView([22.9734, 78.6569], 5);
+    let markerLayer = L.layerGroup().addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
+
+    const stateFilter = document.getElementById('stateFilter');
+    const districtFilter = document.getElementById('districtFilter');
+    const stationList = document.getElementById('stationList');
+    const resultCount = document.getElementById('resultCount');
+    const resultTitle = document.getElementById('resultTitle');
+
+    async function loadStates(){
+      const res = await fetch(`${API}/api/states`);
+      const states = await res.json();
+      states.sort().forEach(s => stateFilter.innerHTML += `<option value="${s}">${s}</option>`);
+    }
+    async function loadDistricts(state){
+      districtFilter.innerHTML = '<option value="">Select District</option>';
+      if(!state){ districtFilter.disabled = true; return; }
+      const res = await fetch(`${API}/api/districts?state=${encodeURIComponent(state)}`);
+      const districts = await res.json();
+      districts.sort().forEach(d => districtFilter.innerHTML += `<option value="${d}">${d}</option>`);
+      districtFilter.disabled = false;
+    }
+    async function loadStations(){
+      const state = stateFilter.value;
+      const district = districtFilter.value;
+      if(!state || !district){ alert('Please select both state and district'); return; }
+      stationList.innerHTML = '<p class="muted">Loading stations...</p>';
+      markerLayer.clearLayers();
+      const res = await fetch(`${API}/api/stations?state=${encodeURIComponent(state)}&city=${encodeURIComponent(district)}`);
+      const stations = await res.json();
+      resultTitle.textContent = `Charging Stations in ${district}, ${state}`;
+      resultCount.textContent = `(${stations.length} found)`;
+      if(!stations.length){ stationList.innerHTML = '<div class="station-card"><h3>No stations found</h3><p class="muted">Try another district or add scraped CSV data.</p></div>'; return; }
+      stationList.innerHTML = '';
+      const bounds = [];
+      stations.forEach(st => {
+        const lat = Number(st.latitude), lng = Number(st.longitude);
+        stationList.innerHTML += `<div class="station-card"><h3>${st.name}</h3><p><b>Address:</b> ${st.address}</p><p><b>Services:</b> ${st.services}</p><p><b>Timing:</b> ${st.timing}</p><div class="actions"><a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}">Directions</a></div></div>`;
+        if(!Number.isNaN(lat) && !Number.isNaN(lng)){
+          const m = L.marker([lat,lng]).addTo(markerLayer).bindPopup(`<b>${st.name}</b><br>${st.address}<br>${st.services}`);
+          bounds.push([lat,lng]);
+        }
+      });
+      if(bounds.length) map.fitBounds(bounds, {padding:[35,35]});
+    }
+    stateFilter.addEventListener('change', e => loadDistricts(e.target.value));
+    document.getElementById('searchBtn').addEventListener('click', loadStations);
+    loadStates();
+  </script>
+</body>
+</html>
